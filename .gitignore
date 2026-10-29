@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+# 테스트로 만든 영상·자막이 섞이지 않도록
+*.mp4
+*.mkv
+*.srt
+*.vtt
+*.subtool.json
+*.subtool.autosave.json

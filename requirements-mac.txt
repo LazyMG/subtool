@@ -1,0 +1,4 @@
+# Apple Silicon Mac: mlx-whisper 엔진
+fastapi>=0.110
+uvicorn[standard]>=0.29
+mlx-whisper>=0.4

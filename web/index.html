@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>subtool</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">▣</span> subtool</div>
+  <div class="spacer"></div>
+  <span id="saveState" class="pill"></span>
+  <button id="themeBtn" class="ghost sm" title="테마 전환">테마</button>
+</header>
+
+<div class="layout">
+  <!-- 왼쪽: 영상 목록 + 작업 -->
+  <aside class="panel sidebar">
+    <div class="panel-head">
+      <h2>영상</h2>
+      <button id="addBtn" class="primary sm">+ 파일 선택</button>
+    </div>
+    <input id="pathInput" class="input" placeholder="또는 경로 붙여넣기 후 Enter">
+    <ul id="videoList" class="video-list"></ul>
+
+    <div class="panel-head mt">
+      <h2>작업</h2>
+    </div>
+    <ul id="jobList" class="job-list"></ul>
+  </aside>
+
+  <!-- 가운데: 통계 + 플레이어 / 받아쓰기 -->
+  <main class="center">
+    <div id="empty" class="empty">
+      <p>왼쪽에서 영상을 추가하고 선택하세요.</p>
+      <p class="muted">영상은 업로드되지 않고 원래 위치에서 바로 읽습니다.</p>
+    </div>
+
+    <div id="workspace" hidden>
+      <div class="title-row">
+        <h1 id="videoName"></h1>
+        <div class="tabs">
+          <button class="tab active" data-tab="edit">편집</button>
+          <button class="tab" data-tab="cmd">받아쓰기</button>
+        </div>
+      </div>
+
+      <section class="cards">
+        <div class="card"><div class="card-label">자막</div><div id="statCues" class="card-value">-</div></div>
+        <div class="card"><div class="card-label">영상 길이</div><div id="statDur" class="card-value">-</div></div>
+        <div class="card"><div class="card-label">겹침 경고</div><div id="statOverlap" class="card-value">-</div></div>
+        <div class="card"><div class="card-label">상태</div><div id="statStatus" class="card-value">-</div></div>
+      </section>
+
+      <!-- 편집 탭 -->
+      <section id="tab-edit" class="tab-body">
+        <div id="restoreBanner" class="banner" hidden>
+          저장하지 않은 자동 저장본이 있습니다.
+          <button id="restoreYes" class="primary sm">복구</button>
+          <button id="restoreNo" class="ghost sm">버리기</button>
+        </div>
+        <div id="noDoc" class="banner" hidden>
+          아직 자막이 없습니다. <button id="goCmd" class="primary sm">받아쓰기 탭으로</button>
+        </div>
+
+        <div class="player-wrap">
+          <video id="video" preload="metadata"></video>
+          <div id="overlay" class="overlay" title="클릭해서 텍스트 수정"></div>
+        </div>
+
+        <div class="controls">
+          <button id="playBtn" class="icon" title="재생/정지 (Space)">▶</button>
+          <span id="timeLabel" class="mono">00:00.0 / 00:00</span>
+          <input id="seek" type="range" min="0" max="1000" value="0">
+          <button id="rateBtn" class="ghost sm" title="재생 속도">1x</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="group">
+            <span class="label">전체 이동</span>
+            <button data-shift="-0.1" class="sm">−0.1s</button>
+            <button data-shift="0.1" class="sm">+0.1s</button>
+            <span id="offsetLabel" class="mono muted">0.0s</span>
+          </div>
+          <div class="group">
+            <button id="autoSyncBtn" class="sm">자동 맞춤</button>
+          </div>
+          <div class="group">
+            <span class="label">구간</span>
+            <span id="rangeLabel" class="mono muted">I / O 키로 지정</span>
+            <button id="rangeToCmd" class="ghost sm">받아쓰기로 →</button>
+            <button id="rangeClear" class="ghost sm">지우기</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="group">
+            <button id="undoBtn" class="ghost sm" title="Ctrl/Cmd+Z">되돌리기</button>
+            <button id="redoBtn" class="ghost sm" title="Ctrl/Cmd+Shift+Z">다시 실행</button>
+          </div>
+          <div class="group">
+            <label class="check"><input id="syncedChk" type="checkbox"> 싱크 완료</label>
+            <button id="saveBtn" class="primary sm" title="Ctrl/Cmd+S">저장</button>
+          </div>
+          <div class="spacer"></div>
+          <div class="group">
+            <span class="label">내보내기</span>
+            <button data-export="txt" class="sm">TXT</button>
+            <button data-export="timestamped" class="sm">시각 TXT</button>
+            <button data-export="srt" class="sm">SRT</button>
+            <button data-export="vtt" class="sm">VTT</button>
+            <button data-export="mkv" class="sm">MKV</button>
+          </div>
+        </div>
+
+        <details class="help">
+          <summary>단축키</summary>
+          <div class="keys">
+            <span><kbd>Space</kbd> 재생/정지</span>
+            <span><kbd>←</kbd><kbd>→</kbd> 1초 이동</span>
+            <span><kbd>↑</kbd><kbd>↓</kbd> 이전/다음 자막</span>
+            <span><kbd>[</kbd> 현재 자막 시작 = 지금</span>
+            <span><kbd>]</kbd> 현재 자막 끝 = 지금</span>
+            <span><kbd>,</kbd><kbd>.</kbd> 현재 자막 ±0.1초</span>
+            <span><kbd>Shift</kbd>+<kbd>,</kbd><kbd>.</kbd> 전체 ±0.1초</span>
+            <span><kbd>S</kbd> 지금 위치에서 나누기</span>
+            <span><kbd>M</kbd> 다음 자막과 합치기</span>
+            <span><kbd>I</kbd><kbd>O</kbd> 받아쓰기 구간 시작/끝</span>
+            <span><kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd> 되돌리기</span>
+            <span><kbd>Ctrl/Cmd</kbd>+<kbd>S</kbd> 저장</span>
+          </div>
+          <p class="muted">한글 입력 상태에서도 동작합니다. 자막 텍스트는 화면 위 자막을 클릭하거나 오른쪽 목록에서 고칩니다.</p>
+        </details>
+      </section>
+
+      <!-- 받아쓰기 탭: 명령어 생성기 -->
+      <section id="tab-cmd" class="tab-body" hidden>
+        <div class="form">
+          <label class="field">
+            <span>구간 <em class="muted">비우면 전체. 예: 0:00-1:30, 3:00-19:00</em></span>
+            <input id="optRanges" class="input mono" placeholder="전체">
+          </label>
+
+          <div class="field">
+            <span>용어집 <em class="muted">자동으로 함께 쓰는 파일</em></span>
+            <ul id="autoGlossary" class="file-list"></ul>
+            <label class="check"><input id="optNoDefault" type="checkbox"> 위 기본·시리즈 용어집 쓰지 않기</label>
+          </div>
+
+          <div class="field">
+            <span>추가 용어집 <em class="muted">힌트 파일</em></span>
+            <ul id="extraGlossary" class="file-list"></ul>
+            <button id="addGlossary" class="sm">+ 파일 선택</button>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <span>엔진</span>
+              <select id="optEngine" class="input">
+                <option value="auto">자동</option>
+                <option value="mlx">mlx (Apple Silicon)</option>
+                <option value="faster">faster-whisper</option>
+              </select>
+            </label>
+            <label class="field grow">
+              <span>모델 <em class="muted">비우면 기본</em></span>
+              <input id="optModel" class="input mono" list="modelList" placeholder="">
+              <datalist id="modelList">
+                <option value="mlx-community/whisper-large-v3-turbo">
+                <option value="mlx-community/whisper-large-v3-mlx">
+                <option value="large-v3-turbo">
+                <option value="large-v3">
+                <option value="medium.en">
+                <option value="small.en">
+              </datalist>
+            </label>
+            <label class="field">
+              <span>한 줄 글자 수</span>
+              <input id="optMaxChars" class="input mono" type="number" min="20" max="80" value="42">
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="check"><input id="optReplace" type="checkbox"> 구간에 있던 자막 교체</label>
+            <label class="check danger"><input id="optForce" type="checkbox"> 처음부터 다시 (편집 내용 사라짐)</label>
+          </div>
+
+          <div class="field">
+            <span>명령어</span>
+            <pre id="cmdPreview" class="cmd mono"></pre>
+          </div>
+          <div class="row">
+            <button id="copyCmd">복사</button>
+            <button id="runCmd" class="primary">바로 실행</button>
+            <span class="muted">실행하면 백그라운드에서 처리됩니다. 브라우저를 닫아도 계속됩니다.</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 오른쪽: 선택 자막 + 목록 -->
+  <aside class="panel rightbar">
+    <div class="panel-head">
+      <h2>자막 목록</h2>
+      <span id="cueCount" class="muted"></span>
+    </div>
+    <div id="cueEditor" class="cue-editor" hidden>
+      <div class="row">
+        <label class="field"><span>시작</span><input id="edStart" class="input mono"></label>
+        <label class="field"><span>끝</span><input id="edEnd" class="input mono"></label>
+      </div>
+      <textarea id="edText" class="input" rows="3"></textarea>
+      <div class="row wrap">
+        <button id="edSplit" class="ghost sm">나누기</button>
+        <button id="edMerge" class="ghost sm">다음과 합치기</button>
+        <button id="edDelete" class="ghost sm danger">삭제</button>
+      </div>
+    </div>
+    <ul id="cueList" class="cue-list"></ul>
+  </aside>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

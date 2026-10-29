@@ -1,0 +1,4 @@
+# 공통 + Windows / Linux / Intel Mac 받아쓰기 엔진
+fastapi>=0.110
+uvicorn[standard]>=0.29
+faster-whisper>=1.1
